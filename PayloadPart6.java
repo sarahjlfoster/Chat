@@ -5,6 +5,7 @@ public class PayloadPart6 implements Serializable{
 	 */
 	private static final long serialVersionUID = -6625037986217386003L;
 	private String message;
+	private String userName;
 	private boolean isOn = false;
 	public void IsOn(boolean isOn) {
 		this.isOn = isOn;
@@ -17,6 +18,13 @@ public class PayloadPart6 implements Serializable{
 	}
 	public String getMessage() {
 		return this.message;
+	}
+	public String getUserName(){
+		return this.userName;
+	}
+	public String setUserName(String u)
+	{
+		return this.userName = u;
 	}
 	
 	private PayloadTypePart6 payloadType;

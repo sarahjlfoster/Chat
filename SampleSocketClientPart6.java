@@ -1,10 +1,9 @@
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.Scanner;
 
 
 public class SampleSocketClientPart6 {
@@ -15,6 +14,7 @@ public class SampleSocketClientPart6 {
 	}
 	private Queue<PayloadPart6> toServer = new LinkedList<PayloadPart6>();
 	private Queue<PayloadPart6> fromServer = new LinkedList<PayloadPart6>();
+	private boolean init = true;
 	
 	public static SampleSocketClientPart6 connect(String address, int port) {
 		final SampleSocketClientPart6 client = new SampleSocketClientPart6();
@@ -43,6 +43,7 @@ public class SampleSocketClientPart6 {
 			e.printStackTrace();
 		}
 	}
+
 	public void start() {
 		if(server == null) {
 			return;
@@ -50,12 +51,21 @@ public class SampleSocketClientPart6 {
 		System.out.println("Client Started");
 		//listen to console, server in, and write to server out
 		try(	ObjectOutputStream out = new ObjectOutputStream(server.getOutputStream());
-				ObjectInputStream in = new ObjectInputStream(server.getInputStream());){
+				ObjectInputStream in = new ObjectInputStream(server.getInputStream());
+				Scanner scan = new Scanner(System.in)){
 			Thread inputThread = new Thread() {
 				@Override
 				public void run() {
 					try {
 						while(!server.isClosed()) {
+							System.out.println(init ? "Please enter a username: " : "Please enter your message: ");
+							String message = scan.nextLine();
+							if (init) {
+								sendUserName(message);
+								init = false;
+							} else {
+								sendMessage(message);
+							}
 							PayloadPart6 p = toServer.poll();
 							if(p != null) {
 								out.writeObject(p);
@@ -147,6 +157,13 @@ public class SampleSocketClientPart6 {
 		finally {
 			close();
 		}
+	}
+
+	public void sendUserName(String userName){
+		PayloadPart6 payload = new PayloadPart6();
+		payload.setPayloadType(PayloadTypePart6.USERNAME);
+		payload.setUserName(userName);
+		toServer.add(payload);
 	}
 	public void postConnectionData() {
 		PayloadPart6 payload = new PayloadPart6();

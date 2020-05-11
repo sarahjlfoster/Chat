@@ -134,6 +134,7 @@ public class SampleSocketServerPart6 {
 		//show in all client's chat. You'll see why this is a bad idea
 		//when clients disconnect/reconnect.
 		int from = getClientIndexByThreadId(id);
+		System.out.println(from);
 		String msg = payload.getMessage();
 		payload.setMessage(
 				//prepending client name to front of message

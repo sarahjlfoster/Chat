@@ -3,5 +3,6 @@ public enum PayloadTypePart6 {
 	DISCONNECT,
 	MESSAGE,
 	SWITCH,
-	STATE_SYNC
+	STATE_SYNC, 
+	USERNAME
 }
