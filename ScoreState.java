@@ -5,7 +5,9 @@ import java.util.List;
 public class ScoreState implements Serializable{
 	List<Score> scores = new ArrayList<Score>();
 	public void getTop5(Score b, Score a) {
-		scores.sort((a, b)->a.compareTo(b.score));
+		scores.sort((Score x, Score y)-> {
+			return x.compareTo(y.score);
+		});
 		for(int i = 0; i < 5; i++) {
 			Score score = scores.get(i);
 			System.out.println(score.name + ": " + score.score);
