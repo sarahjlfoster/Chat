@@ -235,6 +235,8 @@ public class SampleSocketClientPart6 {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+		loadingFrame main = new loadingFrame();
+		main.setVisible(true);
 	}
 
 }
