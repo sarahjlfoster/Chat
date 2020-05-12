@@ -128,6 +128,9 @@ public class ServerThreadPart6 extends Thread{
 			//whatever we get from the client, just tell everyone else, ok?
 			server.toggleButton(payload);
 			break;
+		case USERNAME:
+			this.clientName = payload.getUserName();
+			break;
 		default:
 			System.out.println("Unhandled payload type from client " + payload.getPayloadType());
 			break;

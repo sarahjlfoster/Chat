@@ -1,6 +1,11 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.*;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Scanner;
@@ -15,6 +20,70 @@ public class SampleSocketClientPart6 {
 	private Queue<PayloadPart6> toServer = new LinkedList<PayloadPart6>();
 	private Queue<PayloadPart6> fromServer = new LinkedList<PayloadPart6>();
 	private boolean init = true;
+
+	final static String[] ipAddr = {null};
+	final static int[] portNum = {-1};
+
+	static JFrame connectWindow = new JFrame();
+	JPanel ipInput = new JPanel();
+	JPanel portInput = new JPanel();
+	JLabel ipLabel = new JLabel("IP Address:");
+	JTextField ip = new JTextField("127.0.0.1");
+	JLabel portLabel = new JLabel("Port");
+	JTextField port = new JTextField("3001");
+	JButton connectButton = new JButton("Connect!");
+
+	JFrame usernameWindow = new JFrame();
+	JPanel usernamePanel = new JPanel();
+	JLabel usernameLabel = new JLabel("Please enter a username:");
+	JTextField usernameField = new JTextField();
+
+	JFrame chatWindow = new JFrame();
+	JLabel chatTitle = new JLabel("Chat", SwingConstants.CENTER);
+	JPanel chatFeedPanel = new JPanel();
+	JTextArea chatFeed = new JTextArea();
+	JPanel userInputPanel = new JPanel();
+	JButton sendButton = new JButton("Send");
+	JLabel inputLabel = new JLabel("Enter your message:", SwingConstants.LEFT);
+	JTextArea userInput = new JTextArea();
+
+	public ArrayList<String> messages = new ArrayList<>();
+	String messageFeed = "";
+
+	public SampleSocketClientPart6(){
+		connectWindow.setSize(300,200);
+		connectWindow.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+		usernameWindow.setSize(300,200);
+		usernameWindow.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+		chatWindow.setSize(450, 650);
+		chatWindow.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+
+		ipInput.setLayout(new FlowLayout());
+		ipInput.setPreferredSize(new Dimension(connectWindow.getWidth(), connectWindow.getHeight()/2));
+
+		portInput.setLayout(new FlowLayout());
+
+		connectWindow.setLayout(new GridLayout(3, 1));
+
+
+		connectButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				ipAddr[0] = ip.getText();
+				portNum[0] = Integer.parseInt(port.getText());
+
+			}
+		});
+
+		ipInput.add(ipLabel);
+		ipInput.add(ip);
+		portInput.add(portLabel);
+		portInput.add(port);
+		connectWindow.add(ipInput);
+		connectWindow.add(portInput);
+		connectWindow.add(connectButton);
+		connectWindow.setVisible(true);
+	}
 	
 	public static SampleSocketClientPart6 connect(String address, int port) {
 		final SampleSocketClientPart6 client = new SampleSocketClientPart6();
@@ -48,23 +117,80 @@ public class SampleSocketClientPart6 {
 		if(server == null) {
 			return;
 		}
+		final String[] username = {null};
+		usernameWindow.setLayout(new GridLayout(1,1));
+		usernamePanel.setLayout(new FlowLayout());
+		usernameField.setPreferredSize(new Dimension(150, 30));
+
+		usernamePanel.add(usernameLabel);
+		usernamePanel.add(usernameField);
+
+		usernameWindow.add(usernamePanel);
+		connectWindow.setVisible(false);
+		usernameWindow.setVisible(true);
+		usernameWindow.setFocusableWindowState(true);
+
+		usernameField.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				username[0] = usernameField.getText();
+			}
+		});
+
+		//Set up the chat window but don't activate it yet
+		final String[] message = {null};
+		chatWindow.setLayout(new BorderLayout(10,10));
+		chatFeedPanel.setLayout(new FlowLayout());
+		chatFeed.setEditable(false);
+		chatFeed.setPreferredSize(new Dimension(chatWindow.getWidth()-20, 500));
+		chatFeed.setBorder(BorderFactory.createLineBorder(Color.pink, 2));
+		chatFeedPanel.add(chatFeed);
+		chatWindow.add(chatTitle, BorderLayout.NORTH);
+		chatWindow.add(chatFeedPanel, BorderLayout.CENTER);
+
+
+		userInputPanel.setLayout(new FlowLayout());
+		userInput.setPreferredSize(new Dimension(chatWindow.getWidth()/2, 60));
+		userInput.setBorder(BorderFactory.createLineBorder(Color.pink, 1));
+		userInputPanel.add(inputLabel);
+		userInputPanel.add(userInput);
+		userInputPanel.add(sendButton);
+
+		chatWindow.add(userInputPanel, BorderLayout.SOUTH);
+
+		sendButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				message[0] = userInput.getText();
+				userInput.setText(null);
+			}
+		});
+
 		System.out.println("Client Started");
 		//listen to console, server in, and write to server out
 		try(	ObjectOutputStream out = new ObjectOutputStream(server.getOutputStream());
-				ObjectInputStream in = new ObjectInputStream(server.getInputStream());
-				Scanner scan = new Scanner(System.in)){
+				ObjectInputStream in = new ObjectInputStream(server.getInputStream())
+		){
 			Thread inputThread = new Thread() {
 				@Override
 				public void run() {
 					try {
 						while(!server.isClosed()) {
-							System.out.println(init ? "Please enter a username: " : "Please enter your message: ");
-							String message = scan.nextLine();
+							while(username[0] == null){
+								System.out.println("waiting for username");
+							}
 							if (init) {
-								sendUserName(message);
+								sendUserName(username[0]);
+								System.out.println("username " + username[0] + " sent!");
 								init = false;
 							} else {
-								sendMessage(message);
+								usernameWindow.setVisible(false);
+								chatWindow.setVisible(true);
+								chatWindow.setFocusableWindowState(true);
+								if(message[0] != null){
+									sendMessage(message[0]);
+								}
+								message[0] = null;
 							}
 							PayloadPart6 p = toServer.poll();
 							if(p != null) {
@@ -200,6 +326,26 @@ public class SampleSocketClientPart6 {
 			System.out.println(
 					String.format("%s", payload.getMessage())
 			);
+			messages.add(String.format("%s", payload.getMessage()));
+
+			for(int i = 0; i < messages.size(); i++){
+				if(messages.get(i).charAt(messages.get(i).length()-1) == '\n'){
+					System.out.println("ending with a newline");
+					messages.set(i, messages.get(i).substring(0, messages.get(i).length() - 1));
+				}
+
+				if(i == 0){
+					messageFeed = messages.get(i) + "\n";
+				}
+				else if(i == messages.size() - 1 ){
+					messageFeed = messageFeed + messages.get(i);
+				}
+				else{
+					messageFeed = messageFeed + messages.get(i) + "\n";
+				}
+			}
+
+			chatFeed.setText(messageFeed);
 			
 			break;
 		case STATE_SYNC:
@@ -226,17 +372,26 @@ public class SampleSocketClientPart6 {
 			}
 		}
 	}
+
 	public static void main(String[] args) {
+
 		SampleSocketClientPart6 client = new SampleSocketClientPart6();
-		client.connect("127.0.0.1", 3001);
+
+		connectWindow.setVisible(true);
+
+		while(ipAddr[0] == null && portNum[0] == -1){
+			System.out.println(ipAddr[0]);
+		}
+
+		System.out.println("Got out of loop");
+		client.connect(ipAddr[0], portNum[0]);
 		try {
 			//if start is private, it's valid here since this main is part of the class
+
 			client.start();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		loadingFrame main = new loadingFrame();
-		main.setVisible(true);
 	}
 
 }
